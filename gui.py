@@ -1,11 +1,12 @@
 import tkinter as tk
+from tkinter import messagebox
 
 from backend import Transaction
-from backend import ExpenseTracker
 
 LARGE_FONT = ("Arial", 20)
 MEDIUM_FONT = ("Arial", 16)
 SMALL_FONT = ("Arial", 14)
+CURRENCY = "\u00a3"
 
 class createMenu:
     SIZE = "500x400"
@@ -45,20 +46,20 @@ class createMenu:
         self.root.mainloop()
 
     def create_transaction_menu(self):
-        root = tk.Tk()
-        menu = createTransactionMenu(root, self.tracker)
+        root = tk.Toplevel(self.root)
+        createTransactionMenu(root, self.tracker)
 
     def create_balance_menu(self):
-        root = tk.Tk()
-        menu = createBalanceMenu(root, self.tracker)
+        root = tk.Toplevel(self.root)
+        createBalanceMenu(root, self.tracker)
 
     def create_summary_menu(self):
-        multiplier = len(self.tracker.category_summary()) - 2
+        multiplier = max(len(self.tracker.category_summary()) - 2, 0)
         size_y = 300 + (multiplier * 50)
         size = "500x" + str(size_y)
         
-        root = tk.Tk()
-        menu = createSummaryMenu(root, size, self.tracker)
+        root = tk.Toplevel(self.root)
+        createSummaryMenu(root, size, self.tracker)
 
     def save_and_exit(self):
         self.tracker.save_to_file()
@@ -108,9 +109,18 @@ class createTransactionMenu:
         exit.pack(side="left", padx=10)
 
     def save_responses(self, amount, category, description):
-        amount = int(amount.get())
-        category = category.get()
-        description = description.get()
+        try:
+            amount = float(amount.get())
+        except ValueError:
+            messagebox.showerror("Invalid Amount", "Please enter a valid number.")
+            return
+
+        category = category.get().strip()
+        description = description.get().strip()
+
+        if not category:
+            messagebox.showerror("Missing Category", "Please enter a category.")
+            return
 
         new_transaction = Transaction(amount, category, description)
         self.tracker.add_transaction(new_transaction)
@@ -135,7 +145,7 @@ class createBalanceMenu:
         description = tk.Label(frame, text="Total Balance:", font=LARGE_FONT)
 
         balance = self.tracker.total_balance()
-        formatted_balance = f"£{balance:.2f}"
+        formatted_balance = f"{CURRENCY}{balance:.2f}"
         balanceText = tk.Label(frame, text=formatted_balance, font=MEDIUM_FONT)
 
         description.pack()
@@ -167,7 +177,7 @@ class createSummaryMenu:
             tk.Label(form_frame, text=f"{c}:", font=SMALL_FONT).grid(row=row+1, column=0, padx=5, pady=5, sticky="e")
             
             amount = summary[c]
-            formatted_amount = f"£{amount:.2f}"
+            formatted_amount = f"{CURRENCY}{amount:.2f}"
             tk.Label(form_frame, text=formatted_amount, font=SMALL_FONT).grid(row=row+1, column=1, padx=10, pady=5, sticky="e")
 
         bottom_frame = tk.Frame(self.root)
@@ -177,21 +187,21 @@ class createSummaryMenu:
         tk.Label(bottom_frame, text="Income:", font=(MEDIUM_FONT)).grid(row=0, column=0, padx=5, pady=5)
         
         income = self.tracker.total_income()
-        formatted_income = f"£{income:.2f}"
+        formatted_income = f"{CURRENCY}{income:.2f}"
         tk.Label(bottom_frame, text=formatted_income, font=(MEDIUM_FONT)).grid(row=0, column=1, padx=5, pady=5)
 
         # --- Expenses Overview ---
         tk.Label(bottom_frame, text="Expenses:", font=(MEDIUM_FONT)).grid(row=1, column=0, padx=5, pady=5)
 
         expenses = self.tracker.total_expenses()
-        formatted_expenses = f"£{expenses:.2f}"
+        formatted_expenses = f"{CURRENCY}{expenses:.2f}"
         tk.Label(bottom_frame, text=formatted_expenses, font=(MEDIUM_FONT)).grid(row=1, column=1, padx=5, pady=5)
 
         # --- Net Balance ---
         tk.Label(bottom_frame, text="Net Balance:", font=(MEDIUM_FONT)).grid(row=2, column=0, padx=5, pady=5)
 
         balance = self.tracker.total_balance()
-        formatted_balance = f"£{balance:.2f}"
+        formatted_balance = f"{CURRENCY}{balance:.2f}"
         tk.Label(bottom_frame, text=formatted_balance, font=(MEDIUM_FONT)).grid(row=2, column=1, padx=5, pady=5)
 
         exit = tk.Button(bottom_frame, text="Exit", width=15, height=2, command=self.root.destroy).grid(row=3, column=0, columnspan=2, pady=5)
